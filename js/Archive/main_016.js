@@ -1,0 +1,423 @@
+    var game = new Phaser.Game(960, 640, Phaser.AUTO, 'gameDOM', { preload: preload, create: create, update: update });
+        
+    
+    function preload() {
+   
+        game.load.image('background', 'Sprites/Backgrounds/background_darkPurple.png');
+        game.load.image('brick', 'Sprites/Backgrounds/Bricks.png');
+        game.load.image('Enemy', 'Sprites/testEnemy.png');
+        game.load.spritesheet('zombie', 'Sprites/Zombie_Sprite.png', 64, 64, 8);
+        game.load.spritesheet('princess', 'Sprites/Princess_Sprite_Leftv3.png', 64, 64, 33);
+             
+    }
+    
+                    /* Declare Variables */
+    var background;
+    var player;
+        var playerHealth;
+        var playerLeft = false;
+        var isPlayerAlive = true;
+        var isPlayerPunching = false;
+        var isPlayerTouchingEnemy = false;
+            var punchTime;
+            var timeSincePunch;
+        var distanceBetweenPlayer;
+        var isEnemyOnRightOfPlayer;
+        
+    var firstEnemy = {};
+    var secondEnemy = {};
+       
+    
+   
+
+    var platforms;
+    var brickSquare;
+
+    var cursors;
+    var xKey;
+    
+    var currentTime;
+    var score = 0;
+    var scoreText;
+    
+    var debutText;
+    var debugVariable;
+    var timeCheck = 0;
+
+
+    function create() {
+        
+        var timeCheck = game.time.now
+        
+        //enable Arcade Physics
+        game.physics.startSystem(Phaser.Physics.ARCADE);
+        
+        //add the dark purple background
+        background = game.add.sprite(0, 0 ,'background');
+        background.fixedToCamera = true;
+        
+        //game.add.tileSprite(0, 0, 1920, 1920, 'background');
+        //game.world.setBounds(25,15,120,120);
+        
+    /* Create Enemies */
+        //Create firstEnemy
+        firstEnemy = game.add.sprite(500, 470, 'zombie');
+        firstEnemy.scale.setTo(1.5,1.5);
+            firstEnemy.Physics = game.physics.arcade.enable(firstEnemy, Phaser.Physics.ARCADE);
+            firstEnemy.body.gravity.y = 600;
+            firstEnemy.isAlive = true;
+            firstEnemy.health = 100;
+            firstEnemy.onRightOfPlayer = true ;
+     
+        secondEnemy = game.add.sprite(800, 470, 'zombie');
+        secondEnemy.scale.setTo(1.5,1.5);
+            secondEnemy.Physics = game.physics.arcade.enable(secondEnemy, Phaser.Physics.ARCADE);
+            secondEnemy.body.gravity.y = 600;
+            secondEnemy.isAlive = true;
+            secondEnemy.health = 100;
+            secondEnemy.onRightOfPlayer = true ;
+            secondEnemy.touchingPlayer = false ;
+            //secondEnemy.anchor.setTo(.25, 0);
+        
+        //Bricks group
+        brickSquare = game.add.group();
+        brickSquare.enableBody = true;
+        
+        //create the floor  
+        for(var i=0; i <16; i++)
+            {
+                var brickFloor = brickSquare.create(i*64, game.world.height-64, 'brick');
+                brickFloor.body.immovable = true;
+                brickFloor.scale.setTo(.5,.5);
+                
+            }
+        
+        //The Player and its settings
+        player = game.add.sprite(32, game.world.height-164, 'princess');
+        //player.body.setSize(20, 24, 10, 10);
+        player.scale.setTo(1.5,1.5);
+        //player.anchor.setTo(.5,.5);
+        playerHealth = 100;
+        
+        
+        //enable physics on player
+        game.physics.arcade.enable(player, Phaser.Physics.ARCADE);
+        
+        // Player physics
+        player.body.bounce.y = 0.1;
+        player.body.gravity.y = 600;
+        player.body.collideWorldBounds = true;
+        
+        //Set Bounding Box for Player Sprite, this has to be done after physics are enabled for player 
+        player.body.setSize(32, 64, 22, 0);
+        //firstEnemy.body.setSize(32,384,22, 0);
+        //secondEnemy.body.setSize(32, 384, 22,0);
+        
+        //Player Animations
+        player.animations.add('left', [5, 4 ,3, 2, 1, 0], 1, true);
+        player.animations.add('right', [6, 7, 8, 9, 10, 11], 1, true);
+        player.animations.add('jump', [17,18], 1, false);
+        player.animations.add('jumpLeft', [20,19], 1, false);
+        player.animations.add('punch', [13,15], 5, true);
+        player.animations.add('punchLeft', [14,16], 5, false);
+        player.animations.add('run', [21,22,23,24,25,26], 5, true);
+        player.animations.add('runLeft', [32,31,30,29,28,27],5, true);
+        
+        
+        //Enemy Animations
+        firstEnemy.animations.add('left', [0,1,2], 1, true);
+        firstEnemy.animations.add('right', [5,4,3], 1, true);
+        secondEnemy.animations.add('left', [2,1,0], 1, true);
+        secondEnemy.animations.add('right', [5,4,3], 1, true);
+        
+        // Game Controls (user Input)
+        cursors = game.input.keyboard.createCursorKeys();
+        xKey = game.input.keyboard.addKey(Phaser.Keyboard.X);
+        zKey = game.input.keyboard.addKey(Phaser.Keyboard.Z);
+        
+        //the Score
+        scoreText = game.add.text(16, 16, 'SCORE: ' + score, {fontsize: '32', fill: '#FFF' });
+        scoreText.fixedToCamera = true;
+        
+        healthText = game.add.text(16, 44, "Health: 100", {fontsize: '32', fill: '#fff'});
+        healthText.fixedToCamera = true;
+                    /* DEBUG TEXT */
+         debugText = game.add.text(215, 44, game.time.now, {font: '16pt Arial', fill: '#FFF'});
+        debugText.fixedToCamera= true;
+        debugText2 = game.add.text(215, 16, 'debugText2', {font: ' 16pt Arial', fill: '#FFF'});
+        debugText2.fixedToCamera = true;
+        debugText3 = game.add.text(215, 76, 'debugText3', {font: '16pt Arial', fill: ' #FFF'});
+        debugText4 = game.add.text(215, 114, firstEnemy.body.position.x, {font: '16pt Arial', fill: '#FFF'});
+        
+        
+        game.world.setBounds(0,0,3000,0);
+        game.camera.follow(player);
+        
+        currentTime = game.time.now;
+        
+    }
+
+/*----------------------------------------------------------------------------------------------*/
+    function update() {
+        
+        function distanceBetweenPlayerX(player, enemy) {return player.body.x - enemy.body.x;}
+        function distanceBetweenPlayerY(player, enemy) {return player.body.y - enemy.body.y;}
+        
+        function isEnemyOnRightOfPlayer(player, enemy) {if (player.body.x - enemy.body.x >= 0) {return enemy.onRightOfPlayer = false} else {return enemy.onRightOfPlayer = true}}
+        
+        function timeSincePunch(punchTime, currentTime) {return game.time.now-punchTime;}
+        
+        function killEnemy (enemy) {
+            enemy.kill();
+            
+           /* score += 10;
+            scoreText.setText("SCORE: " + score) */
+        }
+        
+    //update Text
+        //debugText.setText(distanceBetweenPlayer(player, firstEnemy));
+            debugText.setText("isPlayerTouchingEnemy="+isPlayerTouchingEnemy + ", Distance: " + Math.abs(distanceBetweenPlayerX(player, firstEnemy)));
+           
+            debugText2.setText(/*"firstEnemy.isAlive = " + firstEnemy.isAlive + ", isPlayerAlive = " + isPlayerAlive + "isEnemyOnRight: " + isEnemyOnRightOfPlayer(player, secondEnemy)*/ "zKey=:"+ zKey.isDown /*", firstEnemy.onRight..:" + firstEnemy.onRightOfPlayer*/ + " playerLeft: "+playerLeft);
+                               
+        
+            debugText3.setText('Enemy Health is: ' + firstEnemy.health + ", playerLeft =" + playerLeft + ", secondEnemy.touchingPlayer: "+ secondEnemy.touchingPlayer);
+        
+            healthText.setText("Health: " + playerHealth);
+            scoreText.setText("SCORE: " + score);
+        //debugVariable = player.world.x;
+        
+        
+        
+        
+    //Collisions
+        game.physics.arcade.collide(player, brickSquare);
+        game.physics.arcade.collide(firstEnemy, brickSquare);
+        game.physics.arcade.collide(secondEnemy, brickSquare);
+        //game.physics.arcade.collide(firstEnemy, player);
+        
+        //Reset players velocity (movement)
+        player.body.velocity.x = 0;
+        
+        
+        
+        
+    //Move Enemy towards player
+        //firstEnemy
+        if (isPlayerAlive == true) 
+        {
+            
+        
+            if (player.world.x < firstEnemy.world.x) 
+                {
+                firstEnemy.body.velocity.x = -55; firstEnemy.animations.play('left', 5, true);
+                } 
+            else if (player.world.x > firstEnemy.world.x)
+                {
+                firstEnemy.body.velocity.x=55; firstEnemy.animations.play('right', 3, true);
+                }
+        }
+        else {firstEnemy.body.velocity.x=0; firstEnemy.frame =2;}
+        //secondEnemy
+        if (isPlayerAlive == true)
+        {
+            if (player.world.x < secondEnemy.world.x) {secondEnemy.body.velocity.x = -55;secondEnemy.animations.play('left', 5, true);} else {secondEnemy.body.velocity.x=55;secondEnemy.animations.play('right', 5, true);}
+        }
+            else {secondEnemy.body.velocity.x=0; secondEnemy.frame = 1}
+    //check if Enemy is within range of player
+        //firstEnemy
+        if (firstEnemy.body.x > player.body.x)
+            {
+                firstEnemy.onRightOfPlayer = true;
+            if (Math.abs(distanceBetweenPlayerX(player, firstEnemy)) < 25.00 && Math.abs(distanceBetweenPlayerY(player, firstEnemy)) < 50.00)                     {isPlayerTouchingEnemy=true; }
+            else {isPlayerTouchingEnemy=false;}
+            }
+        if (firstEnemy.body.x < player.body.x)
+            {
+                firstEnemy.onRightOfPlayer = false;
+             if (Math.abs(distanceBetweenPlayerX(player, firstEnemy)) < 55.00 && Math.abs(distanceBetweenPlayerY(player, firstEnemy)) < 50.00)                     {isPlayerTouchingEnemy=true; }
+            else {isPlayerTouchingEnemy=false;}   
+                
+            }
+        
+        //secondEnemy
+        if (secondEnemy.onRightOfPlayer==true)
+            {
+            if (Math.abs(distanceBetweenPlayerX(player, secondEnemy)) < 25.00 && Math.abs(distanceBetweenPlayerY(player, secondEnemy)) < 50.00)                     
+            {
+                 secondEnemy.touchingPlayer = true;debugText.setText('isPlayerTouchingEnemy=true')
+            }
+            else {
+                secondEnemy.touchingPlayer=false; 
+                }
+            }
+      if (secondEnemy.onRightOfPlayer==false)
+          {
+             if (Math.abs(distanceBetweenPlayerX(player, secondEnemy)) < 65.00 && Math.abs(distanceBetweenPlayerY(player, secondEnemy)) < 50.00)                     
+            {
+                 secondEnemy.touchingPlayer = true;debugText.setText('isPlayerTouchingEnemy=true')
+            }
+            else {
+                secondEnemy.touchingPlayer=false;debugText.setText('isPlayerTouchingEnemy=false' +", Distance: " + Math.abs(distanceBetweenPlayerX(player, secondEnemy)) )
+                } 
+              
+          }
+            
+        
+    /*-----------------------------------------------------------------------------------------*/    
+                        /* CONTROLS */
+        //Move Left
+        if (cursors.left.isDown)
+            {
+                
+                player.body.velocity.x = -200;
+                
+                playerLeft = true;
+                if (cursors.up.isDown == false && zKey.isDown == false) {player.animations.play('left', 5, true);}
+                else if (cursors.up.isDown) {player.animations.play('jumpLeft', 2.5, false); player.animations.stop}
+                //Run Left
+                if (zKey.isDown && cursors.up.isDown == false)
+                    {
+                
+                player.body.velocity.x = -400;
+                
+                //player.animations.play('runLeft', 5, true);
+                playerLeft = true;
+                if (cursors.up.isDown == false) {player.animations.play('runLeft', 5, true);}
+                else if (cursors.up.isDown) {player.animations.play('jumpLeft', 2.5, false); player.animations.stop}
+                    }  
+                
+            }
+                 
+        //Move Right
+        else if (cursors.right.isDown)
+            {        
+                player.body.velocity.x = 200;
+                //player.animations.play('right', 5, true);
+                playerLeft = false;
+                if (cursors.up.isDown == false && zKey.isDown == false) {player.animations.play('right', 5, true);}
+                else if (cursors.up.isDown) {player.animations.play('jump', 2.5, false); player.animations.stop}
+                //Run Right
+                if (zKey.isDown && cursors.up.isDown == false)
+                    {
+                        
+                    player.body.velocity.x = 400;
+
+                    playerLeft = false;
+                    if (cursors.up.isDown == false) {player.animations.play('run', 5, true);}
+                    else if (cursors.up.isDown) {player.animations.play('jump', 2.5, false); player.animations.stop}
+                    }  
+            }
+       
+            
+        //play Jump animation
+            else if (cursors.up.isDown && playerLeft == false && isPlayerPunching == false){player.animations.play('jump', 2.5, false, false);}
+            else if (cursors.up.isDown && playerLeft==true && isPlayerPunching == false){player.animations.play('jumpLeft', 2.5, false, false);}
+        //Stand Still
+        else
+            {  
+                player.animations.stop();
+                if (playerLeft == false) { player.frame = 12;
+                                         }
+                else {
+                    player.frame=12;
+                     }
+            }
+        //JUMP - Alow the player to jump if they are touching the ground
+        if (cursors.up.isDown && player.body.touching.down)
+            {
+                player.body.velocity.y = - 250;
+                
+            }
+                 //if (punchTime) {isPlayerPunching=false;player.frame=6;}
+            //punch frame
+        
+            //if (xKey.isDown && playerLeft == false) {player.frame = 15}
+            //if (xKey.isDown && playerLeft == true) {player.frame =16}
+            //Punch
+            if (xKey.justPressed(Phaser.Keyboard.X, 500) && playerLeft == false) 
+                {
+                
+                //player.frame = 13;
+                    player.animations.play('punch', 10, false, true);
+                isPlayerPunching = true;
+                    
+                     punchTime = game.time.now;
+                    //return timeSincePunch(punchTime, currentTime);
+            
+                }
+            else if (xKey.justPressed(Phaser.Keyboard.X, 90000) && playerLeft == true) 
+                {
+                //player.frame = 14;
+                    player.animations.play("punchLeft", 5, true);
+                isPlayerPunching = true;
+                    punchTime = game.time.now;
+                
+                    //if (xKey.downDuration(500)) {isPlayerPunching=false;player.frame=6;}
+            
+                }
+            
+        //adjust the condition in this if statement to increase or decrease difficulty of fight mechanics
+         if (punchTime + 20 < game.time.now) 
+                {
+                    
+                isPlayerPunching= false;
+                }
+        
+        
+        /*-----------------------------------------------------------------------------------------*/
+                                        /* Player/Enemy Interactions */
+        //player punches enemy
+            
+            //firstEnemy
+            if (playerLeft == false) 
+            {
+                    if (firstEnemy.onRightOfPlayer== true && isPlayerTouchingEnemy == true && isPlayerPunching == true && firstEnemy.isAlive && isPlayerAlive) 
+                        {
+                        firstEnemy.health -= 25; firstEnemy.body.position.x += 10;score += 10; firstEnemy.frame = 6;
+                        }
+            }
+            if ( playerLeft == true)
+            {
+                    if (firstEnemy.onRightOfPlayer== false && isPlayerTouchingEnemy == true && isPlayerPunching == true && firstEnemy.isAlive && isPlayerAlive) 
+                        {
+                        firstEnemy.health -= 25; firstEnemy.body.position.x -= 10;score += 10; firstEnemy.frame = 7;
+                        }
+            }
+             //secondEnemy
+            if (playerLeft == false) 
+            {
+                    if (secondEnemy.onRightOfPlayer== true && secondEnemy.touchingPlayer == true && isPlayerPunching == true && secondEnemy.isAlive && isPlayerAlive) 
+                        {
+                        secondEnemy.health -= 25; secondEnemy.body.position.x += 10;score += 10; secondEnemy.frame = 6;
+                        }
+            }
+            if ( playerLeft == true)
+            {
+                    if (secondEnemy.onRightOfPlayer== false && secondEnemy.touchingPlayer == true && isPlayerPunching == true && secondEnemy.isAlive && isPlayerAlive) 
+                        {
+                        secondEnemy.health -= 25; secondEnemy.body.position.x -= 10;score += 10; secondEnemy.frame = 7;
+                        }
+            }
+        //player gets attacked
+            //firstEnemy
+            if (isPlayerTouchingEnemy == true && isPlayerPunching == false && firstEnemy.isAlive) { playerHealth -= 5; scoreText.setText("SCORE: " + score)}
+            //secondEnemy
+            if (secondEnemy.touchingPlayer == true && isPlayerPunching == false && secondEnemy.isAlive)
+                {
+                    playerHealth -= 5;
+                    
+            scoreText.setText("SCORE: " + score);
+                }
+            
+        //player dies
+            if (playerHealth <= 0) {player.kill(); isPlayerAlive = false;healthText.setText("Health: 0");}
+    //Enemy Deaths   
+        //firstEnemy dies
+            if (firstEnemy.health <= 0) {firstEnemy.kill(); firstEnemy.isAlive = false;}
+        //secondEnemy dies
+            if (secondEnemy.health <= 0) {killEnemy(secondEnemy); secondEnemy.isAlive = false;}
+        
+        
+    }   
+                                                            

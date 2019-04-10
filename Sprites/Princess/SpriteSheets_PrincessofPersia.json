@@ -1,0 +1,35 @@
+﻿{"frames": {
+
+"Symbol 10000":
+{
+	"frame": {"x":0,"y":0,"w":55,"h":64},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":0,"y":1,"w":55,"h":65},
+	"sourceSize": {"w":55,"h":65}
+},
+"Symbol 10001":
+{
+	"frame": {"x":55,"y":0,"w":29,"h":64},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":21,"y":0,"w":55,"h":65},
+	"sourceSize": {"w":55,"h":65}
+},
+"Symbol 10002":
+{
+	"frame": {"x":84,"y":0,"w":26,"h":64},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":19,"y":1,"w":55,"h":65},
+	"sourceSize": {"w":55,"h":65}
+}},
+"meta": {
+	"app": "Adobe Animate",
+	"version": "16.2.0.24",
+	"image": "SpriteSheets_PrincessofPersia.png",
+	"format": "RGB8",
+	"size": {"w":128,"h":64},
+	"scale": "1"
+}
+}
